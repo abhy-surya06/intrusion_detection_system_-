@@ -1,40 +1,240 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>SentinelShield Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentinelShield – Intrusion Detection Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial; margin: 20px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .container { max-width: 1200px; margin: auto; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 2.4rem;
+            font-weight: 600;
+            background: linear-gradient(to right, #7dd3fc, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.3rem;
+            letter-spacing: -0.02em;
+        }
+        .header p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+
+        /* Card style */
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(71, 85, 105, 0.4);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1.5rem;
+        }
+        .card h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card h2 i {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        /* Grid for stats and threat summary */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-height: 300px;
+            margin: 0 auto;
+        }
+        canvas {
+            max-height: 280px;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        th {
+            background: rgba(51, 65, 85, 0.6);
+            color: #cbd5e1;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.04em;
+            padding: 0.8rem 0.7rem;
+            text-align: left;
+        }
+        td {
+            padding: 0.65rem 0.7rem;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+            color: #cbd5e1;
+        }
+        tbody tr:hover {
+            background: rgba(71, 85, 105, 0.25);
+        }
+        .threat-badge {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+        .blocked-yes {
+            color: #4ade80;
+            font-weight: 600;
+        }
+        .blocked-no {
+            color: #fb923c;
+            font-weight: 600;
+        }
+
+        /* Empty state */
+        .empty-row td {
+            text-align: center;
+            color: #64748b;
+            padding: 2rem;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>SentinelShield - Intrusion Detection Dashboard</h1>
+    <div class="header">
+        <h1>🛡️ SentinelShield</h1>
+        <p>Intrusion Detection System — Live Threat Monitoring</p>
+    </div>
 
-    <h2>Attack Statistics</h2>
-    <canvas id="statsChart" width="400" height="200"></canvas>
+    <!-- Stats & Threat Summary -->
+    <div class="stats-grid">
+        <!-- Pie chart card -->
+        <div class="card">
+            <h2>📊 Attack Distribution</h2>
+            <div class="chart-container">
+                <canvas id="statsChart"></canvas>
+            </div>
+        </div>
 
-    <h2>Recent Logs</h2>
-    <table>
-        <thead>
-            <tr><th>Time</th><th>IP</th><th>Method</th><th>URL</th><th>Attack Type</th><th>Blocked</th><th>Details</th></tr>
-        </thead>
-        <tbody id="logTable">
-        </tbody>
-    </table>
+        <!-- Threat summary table (from stats) -->
+        <div class="card">
+            <h2>🚨 Threat Summary</h2>
+            <div class="table-wrapper">
+                <table id="threatSummaryTable">
+                    <thead>
+                        <tr>
+                            <th>Attack Type</th>
+                            <th>Occurrences</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Logs (all events) -->
+    <div class="card">
+        <h2>📋 Recent Logs</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>IP</th>
+                        <th>Method</th>
+                        <th>URL</th>
+                        <th>Attack Type</th>
+                        <th>Blocked</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="logTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Threat Events (filtered logs) -->
+    <div class="card">
+        <h2>⚠️ Threat Events (Detected Threats)</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>IP</th>
+                        <th>Attack Type</th>
+                        <th>Blocked</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="threatTable"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
-    // Fetch stats and render pie chart
+    // Helper to format date
+    function formatTime(timestamp) {
+        return new Date(timestamp * 1000).toLocaleString();
+    }
+
+    // Render pie chart with stats
     fetch('/api/stats')
         .then(res => res.json())
         .then(data => {
             const labels = data.map(row => row[0]);
             const values = data.map(row => row[1]);
+
+            // Pie chart
             const ctx = document.getElementById('statsChart').getContext('2d');
             new Chart(ctx, {
                 type: 'pie',
@@ -42,27 +242,110 @@
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0']
+                        backgroundColor: ['#f87171', '#60a5fa', '#fbbf24', '#34d399', '#a78bfa', '#fb923c', '#38bdf8'],
+                        borderColor: 'rgba(30, 41, 59, 0.8)',
+                        borderWidth: 2
                     }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#cbd5e1', font: { size: 11 } }
+                        }
+                    }
                 }
             });
+
+            // Populate threat summary table
+            const summaryTbody = document.querySelector('#threatSummaryTable tbody');
+            summaryTbody.innerHTML = '';
+            if (data.length === 0) {
+                summaryTbody.innerHTML = '<tr class="empty-row"><td colspan="2">No threat data available</td></tr>';
+            } else {
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    const attackType = row[0];
+                    const count = row[1];
+                    tr.innerHTML = `<td><span class="threat-badge">${attackType}</span></td><td>${count}</td>`;
+                    summaryTbody.appendChild(tr);
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Failed to load stats:', err);
+            document.querySelector('#threatSummaryTable tbody').innerHTML =
+                '<tr class="empty-row"><td colspan="2">Failed to load threat summary</td></tr>';
         });
 
-    // Fetch logs and populate table
+    // Fetch logs and fill both tables
     fetch('/api/logs')
         .then(res => res.json())
         .then(logs => {
-            const tbody = document.getElementById('logTable');
+            const allLogsTbody = document.getElementById('logTable');
+            const threatTbody = document.getElementById('threatTable');
+            allLogsTbody.innerHTML = '';
+            threatTbody.innerHTML = '';
+
+            if (!logs.length) {
+                allLogsTbody.innerHTML = '<tr class="empty-row"><td colspan="7">No recent logs</td></tr>';
+                threatTbody.innerHTML = '<tr class="empty-row"><td colspan="5">No threat events detected</td></tr>';
+                return;
+            }
+
             logs.forEach(log => {
-                const row = tbody.insertRow();
-                row.insertCell(0).innerText = new Date(log[1]*1000).toLocaleString();
-                row.insertCell(1).innerText = log[2];
-                row.insertCell(2).innerText = log[3];
-                row.insertCell(3).innerText = log[4];
-                row.insertCell(4).innerText = log[5];
-                row.insertCell(5).innerText = log[6] ? "Yes" : "No";
-                row.insertCell(6).innerText = log[7];
+                const timestamp = log[1];
+                const ip = log[2];
+                const method = log[3];
+                const url = log[4];
+                const attackType = log[5];
+                const blocked = log[6];
+                const details = log[7] || '';
+
+                // All logs table row
+                const allRow = document.createElement('tr');
+                allRow.innerHTML = `
+                    <td>${formatTime(timestamp)}</td>
+                    <td>${ip}</td>
+                    <td>${method}</td>
+                    <td>${url}</td>
+                    <td><span class="threat-badge">${attackType}</span></td>
+                    <td><span class="${blocked ? 'blocked-yes' : 'blocked-no'}">${blocked ? 'Yes' : 'No'}</span></td>
+                    <td>${details}</td>
+                `;
+                allLogsTbody.appendChild(allRow);
+
+                // Threat events table: only show if it's a real threat (attack type not 'Normal' or blocked)
+                // Adjust condition as needed – here we filter out 'Normal' and 'Benign'
+                const isThreat = attackType.toLowerCase() !== 'normal' &&
+                                 attackType.toLowerCase() !== 'benign' &&
+                                 attackType.trim() !== '';
+                if (isThreat) {
+                    const threatRow = document.createElement('tr');
+                    threatRow.innerHTML = `
+                        <td>${formatTime(timestamp)}</td>
+                        <td>${ip}</td>
+                        <td><span class="threat-badge">${attackType}</span></td>
+                        <td><span class="${blocked ? 'blocked-yes' : 'blocked-no'}">${blocked ? 'Yes' : 'No'}</span></td>
+                        <td>${details}</td>
+                    `;
+                    threatTbody.appendChild(threatRow);
+                }
             });
+
+            // If no threats were found after filtering, show empty state
+            if (threatTbody.children.length === 0) {
+                threatTbody.innerHTML = '<tr class="empty-row"><td colspan="5">No threat events in current logs</td></tr>';
+            }
+        })
+        .catch(err => {
+            console.error('Failed to load logs:', err);
+            document.getElementById('logTable').innerHTML =
+                '<tr class="empty-row"><td colspan="7">Error loading logs</td></tr>';
+            document.getElementById('threatTable').innerHTML =
+                '<tr class="empty-row"><td colspan="5">Error loading threat events</td></tr>';
         });
 </script>
 </body>
