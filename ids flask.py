@@ -23,6 +23,9 @@ def protect():
     url = request.url
     headers = dict(request.headers)
     body = request.get_data(as_text=True) if request.data else None
+    # Skip protection for dashboard and API routes
+    if request.path.startswith('/dashboard') or request.path.startswith('/api/'):
+        return None
 
     # 1. Rate limiting check
     allowed, remaining = rate_limiter.is_allowed(ip)
@@ -48,7 +51,7 @@ def protect():
         database.log_request(ip, method, url, 'None', blocked=False, details='Clean')
         # Here you would normally forward to the actual backend.
         # For demo, we just return a success message.
-        return backend_response()
+        return None
 
 @app.route('/dashboard')
 def dashboard():
